@@ -3,6 +3,8 @@ const bodyParser = require("body-parser");
 const cors = require("cors"); // CORSパッケージをインポート
 const { Sequelize } = require("sequelize");
 const EmployeeModel = require("./models/employee");
+const ProjectModel = require("./models/project"); // プロジェクトモデルをインポート
+require("dotenv").config({ path: ".env.local" }); // .env.localファイルから環境変数を読み込む
 
 const app = express();
 const port = 3001;
@@ -18,6 +20,7 @@ const sequelize = new Sequelize(
 );
 
 const Employee = EmployeeModel(sequelize);
+const Project = ProjectModel(sequelize); // プロジェクトモデルを初期化
 
 app.use(bodyParser.json());
 app.use(cors()); // CORSを有効にする
@@ -43,6 +46,33 @@ app.post("/api/employees", async (req, res) => {
     console.error("Error creating employee:", error); // エラーメッセージをログに出力
     res.status(500).json({
       error: "An error occurred while creating the employee",
+      details: error.message,
+    });
+  }
+});
+
+// プロジェクト用のエンドポイントを追加
+app.get("/api/projects", async (req, res) => {
+  try {
+    const projects = await Project.findAll();
+    res.status(200).json(projects);
+  } catch (error) {
+    console.error("Error fetching projects:", error);
+    res
+      .status(500)
+      .json({ error: "An error occurred while fetching projects" });
+  }
+});
+
+app.post("/api/projects", async (req, res) => {
+  try {
+    console.log("Request body:", req.body);
+    const newProject = await Project.create(req.body);
+    res.status(201).json(newProject);
+  } catch (error) {
+    console.error("Error creating project:", error);
+    res.status(500).json({
+      error: "An error occurred while creating the project",
       details: error.message,
     });
   }
