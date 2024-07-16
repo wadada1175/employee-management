@@ -4,6 +4,7 @@ const cors = require("cors"); // CORSパッケージをインポート
 const { Sequelize } = require("sequelize");
 const EmployeeModel = require("./models/employee");
 const ProjectModel = require("./models/project"); // プロジェクトモデルをインポート
+const PasswordModel = require("./models/password");
 require("dotenv").config({ path: ".env.local" }); // .env.localファイルから環境変数を読み込む
 
 const app = express();
@@ -21,6 +22,7 @@ const sequelize = new Sequelize(
 
 const Employee = EmployeeModel(sequelize);
 const Project = ProjectModel(sequelize); // プロジェクトモデルを初期化
+const Password = PasswordModel(sequelize);
 
 app.use(bodyParser.json());
 app.use(cors()); // CORSを有効にする
@@ -75,6 +77,120 @@ app.post("/api/projects", async (req, res) => {
       error: "An error occurred while creating the project",
       details: error.message,
     });
+  }
+});
+
+app.post("/api/passwords", async (req, res) => {
+  try {
+    const { employee_number, password } = req.body;
+    const newPassword = await Password.create({ employee_number, password });
+    res.status(201).json(newPassword);
+  } catch (error) {
+    console.error("Error creating password:", error);
+    res.status(500).json({
+      error: "An error occurred while creating the password",
+      details: error.message,
+    });
+  }
+});
+
+// 既存のコードの後に追加
+const bcrypt = require("bcrypt");
+
+// ログインエンドポイント
+app.post("/api/login", async (req, res) => {
+  try {
+    const { employee_number, password } = req.body;
+    const employeePassword = await Password.findOne({
+      where: { employee_number },
+    });
+
+    if (!employeePassword) {
+      return res.status(404).json({ error: "Employee not found" });
+    }
+
+    const isMatch = await bcrypt.compare(password, employeePassword.password);
+
+    if (!isMatch) {
+      return res.status(401).json({ error: "Invalid credentials" });
+    }
+
+    res.status(200).json({ message: "Login successful" });
+  } catch (error) {
+    console.error("Error logging in:", error);
+    res.status(500).json({
+      error: "An error occurred while logging in",
+      details: error.message,
+    });
+  }
+});
+
+// パスワード保存用エンドポイント
+app.post("/api/passwords", async (req, res) => {
+  try {
+    const { employee_number, password } = req.body;
+    const hashedPassword = await bcrypt.hash(password, 10); // パスワードをハッシュ化
+    const newPassword = await Password.create({
+      employee_number,
+      password: hashedPassword,
+    });
+    res.status(201).json(newPassword);
+  } catch (error) {
+    console.error("Error creating password:", error);
+    res.status(500).json({
+      error: "An error occurred while creating the password",
+      details: error.message,
+    });
+  }
+});
+
+app.delete("/api/employees/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    await Employee.destroy({ where: { id } });
+    res.status(204).send(); // No Content
+  } catch (error) {
+    console.error("Error deleting employee:", error);
+    res
+      .status(500)
+      .json({
+        error: "An error occurred while deleting the employee",
+        details: error.message,
+      });
+  }
+});
+
+// 案件の削除エンドポイント
+app.delete("/api/projects/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    await Project.destroy({ where: { id } });
+    res.status(204).send(); // No Content
+  } catch (error) {
+    console.error("Error deleting project:", error);
+    res
+      .status(500)
+      .json({
+        error: "An error occurred while deleting the project",
+        details: error.message,
+      });
+  }
+});
+
+// パスワードの削除エンドポイント
+app.delete("/api/passwords/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    await Password.destroy({ where: { id } });
+    res.status(204).send(); // No Content
+  } catch (error) {
+    console.error("Error deleting password:", error);
+    res
+      .status(500)
+      .json({
+        error: "An error occurred while deleting the password",
+        details: error.message,
+      });
   }
 });
 

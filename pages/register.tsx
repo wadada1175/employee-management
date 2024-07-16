@@ -17,6 +17,7 @@ const Register = () => {
     ng_list: false,
     banned_info: false,
     self_ban: false,
+    password: "",
   });
   const [error, setError] = useState<string | null>(null);
 
@@ -34,6 +35,18 @@ const Register = () => {
       .post("http://localhost:3001/api/employees", formData)
       .then((response) => {
         alert("従業員が登録されました");
+        // パスワードを保存
+        axios
+          .post("http://localhost:3001/api/passwords", {
+            employee_number: formData.employee_number,
+            password: formData.password,
+          })
+          .then(() => {
+            alert("パスワードが保存されました");
+          })
+          .catch((error) => {
+            console.error("Error saving password:", error);
+          });
       })
       .catch((error) => {
         console.error("Error registering employee:", error);
@@ -173,6 +186,15 @@ const Register = () => {
             type="checkbox"
             name="self_ban"
             checked={formData.self_ban}
+            onChange={handleChange}
+          />
+        </div>
+        <div>
+          <label>パスワード</label>
+          <input
+            type="password"
+            name="password"
+            value={formData.password}
             onChange={handleChange}
           />
         </div>
