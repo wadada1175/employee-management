@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
+import Link from "next/link";
 
 const Employees = () => {
   const [employees, setEmployees] = useState([]);
@@ -47,6 +48,7 @@ const Employees = () => {
           (employee: { id: number; employee_number: string; name: string }) => (
             <li key={employee.id}>
               {employee.employee_number}: {employee.name}
+              <Link href={`/editEmployee?id=${employee.id}`}>編集</Link>
               <button
                 onClick={() => {
                   handleDelete(employee.id);

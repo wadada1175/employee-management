@@ -44,6 +44,10 @@ app.post("/api/employees", async (req, res) => {
     console.log("Request body:", req.body); // リクエストボディをログに出力
     const newEmployee = await Employee.create(req.body);
     res.status(201).json(newEmployee);
+    const newPassword = await Password.create({
+      employee_number: req.body.employee_number,
+      password: hashedPassword,
+    });
   } catch (error) {
     console.error("Error creating employee:", error); // エラーメッセージをログに出力
     res.status(500).json({
@@ -151,12 +155,10 @@ app.delete("/api/employees/:id", async (req, res) => {
     res.status(204).send(); // No Content
   } catch (error) {
     console.error("Error deleting employee:", error);
-    res
-      .status(500)
-      .json({
-        error: "An error occurred while deleting the employee",
-        details: error.message,
-      });
+    res.status(500).json({
+      error: "An error occurred while deleting the employee",
+      details: error.message,
+    });
   }
 });
 
@@ -168,12 +170,10 @@ app.delete("/api/projects/:id", async (req, res) => {
     res.status(204).send(); // No Content
   } catch (error) {
     console.error("Error deleting project:", error);
-    res
-      .status(500)
-      .json({
-        error: "An error occurred while deleting the project",
-        details: error.message,
-      });
+    res.status(500).json({
+      error: "An error occurred while deleting the project",
+      details: error.message,
+    });
   }
 });
 
@@ -185,10 +185,47 @@ app.delete("/api/passwords/:id", async (req, res) => {
     res.status(204).send(); // No Content
   } catch (error) {
     console.error("Error deleting password:", error);
+    res.status(500).json({
+      error: "An error occurred while deleting the password",
+      details: error.message,
+    });
+  }
+});
+
+app.put("/api/employees/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const [updated] = await Employee.update(req.body, { where: { id } });
+    if (updated) {
+      const updatedEmployee = await Employee.findOne({ where: { id } });
+      res.status(200).json(updatedEmployee);
+    } else {
+      throw new Error("Employee not found");
+    }
+  } catch (error) {
+    console.error("Error updating employee:", error);
+    res.status(500).json({
+      error: "An error occurred while updating the employee",
+      details: error.message,
+    });
+  }
+});
+
+app.get("/api/employees/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const employee = await Employee.findOne({ where: { id } });
+    if (employee) {
+      res.status(200).json(employee);
+    } else {
+      res.status(404).json({ error: "Employee not found" });
+    }
+  } catch (error) {
+    console.error("Error fetching employee:", error);
     res
       .status(500)
       .json({
-        error: "An error occurred while deleting the password",
+        error: "An error occurred while fetching the employee",
         details: error.message,
       });
   }
