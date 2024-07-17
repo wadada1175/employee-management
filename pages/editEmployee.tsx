@@ -1,7 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import axios from "axios";
+import { useRouter } from "next/router";
 
-const Register = () => {
+const EditEmployee = () => {
+  const router = useRouter();
+  const { id } = router.query;
+
   const [formData, setFormData] = useState({
     employee_number: "",
     name: "",
@@ -17,9 +21,26 @@ const Register = () => {
     ng_list: false,
     banned_info: false,
     self_ban: false,
-    password: "",
   });
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (id) {
+      axios
+        .get(`http://localhost:3001/api/employees/${id}`)
+        .then((response) => {
+          setFormData(response.data);
+        })
+        .catch((error) => {
+          console.error("Error fetching employee:", error);
+          setError(
+            error.response
+              ? error.response.data
+              : "An unexpected error occurred"
+          );
+        });
+    }
+  }, [id]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
@@ -32,24 +53,13 @@ const Register = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     axios
-      .post("http://localhost:3001/api/employees", formData)
+      .put(`http://localhost:3001/api/employees/${id}`, formData)
       .then((response) => {
-        alert("従業員が登録されました");
-        // パスワードを保存
-        axios
-          .post("http://localhost:3001/api/passwords", {
-            employee_number: formData.employee_number,
-            password: formData.password,
-          })
-          .then(() => {
-            alert("パスワードが保存されました");
-          })
-          .catch((error) => {
-            console.error("Error saving password:", error);
-          });
+        alert("従業員が更新されました");
+        router.push("/employee");
       })
       .catch((error) => {
-        console.error("Error registering employee:", error);
+        console.error("Error updating employee:", error);
         setError(
           error.response
             ? error.response.data.details
@@ -60,7 +70,7 @@ const Register = () => {
 
   return (
     <div>
-      <h1>従業員登録</h1>
+      <h1>従業員編集</h1>
       {error && <p style={{ color: "red" }}>{error}</p>}
       <form onSubmit={handleSubmit}>
         <div>
@@ -70,6 +80,7 @@ const Register = () => {
             name="employee_number"
             value={formData.employee_number}
             onChange={handleChange}
+            disabled
           />
         </div>
         <div>
@@ -189,19 +200,10 @@ const Register = () => {
             onChange={handleChange}
           />
         </div>
-        <div>
-          <label>パスワード</label>
-          <input
-            type="password"
-            name="password"
-            value={formData.password}
-            onChange={handleChange}
-          />
-        </div>
-        <button type="submit">登録</button>
+        <button type="submit">更新</button>
       </form>
     </div>
   );
 };
 
-export default Register;
+export default EditEmployee;

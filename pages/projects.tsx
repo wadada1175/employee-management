@@ -19,6 +19,22 @@ const Projects = () => {
       });
   }, []);
 
+  const handleDelete = (id: number) => {
+    axios
+      .delete(`http://localhost:3001/api/projects/${id}`)
+      .then(() => {
+        setProjects(
+          projects.filter((project: { id: number }) => project.id !== id)
+        );
+      })
+      .catch((error) => {
+        console.error("Error deleting project:", error);
+        setError(
+          error.response ? error.response.data : "An unexpected error occurred"
+        );
+      });
+  };
+
   return (
     <div>
       <h1>案件一覧</h1>
